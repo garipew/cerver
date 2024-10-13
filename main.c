@@ -3,10 +3,21 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <signal.h>
 #include "server.h"
 
 
+static int keepalive;
+
+
+void sigint_handler(int signum){
+	keepalive = 0;
+}
+
+
 int main(int argc, char* argv[]){
+	signal(SIGINT, sigint_handler);
+
 	int sfd = criar_servidor();
 	if(sfd == -1){
 		return 1;
@@ -18,9 +29,9 @@ int main(int argc, char* argv[]){
 	char method[5];
 	char *connection;
 	int cfd = -1;
-	int keepalive = 0;
+	keepalive = 1;
 
-	while(1){
+	while(keepalive){
 		cfd = cfd == -1 ? aceitar_conexao(sfd) : cfd;
 		memset(msg, 0, sizeof(msg));
 		memset(path, 0, sizeof(path));

@@ -134,9 +134,9 @@ char* encontrar_data(){
 int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path, size_t absolute_l){
 	int fsize;
 	FILE* fp;
-	unsigned char *answ;
-	size_t answ_l;
 	char type[100];
+	unsigned char* answ;
+	size_t answ_l;
 	extrair_tipo(absolute_path, type, sizeof(type));
 	fp = fopen(absolute_path, "r");
 	if(!fp){
