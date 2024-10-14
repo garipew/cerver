@@ -170,8 +170,30 @@ int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path, s
 }
 
 
+char* filtrar_str(char* dst, char* src){
+	char *path_until, *remaining_path = dst;
+	char fixed_path[80] = { 0 };
+	path_until = strstr(remaining_path, src);
+	while(path_until){
+		remaining_path = path_until + strlen(src);
+		path_until = strstr(remaining_path, src);
+		if(!path_until){
+			strncat(fixed_path, remaining_path, strlen(remaining_path));
+			break;
+		}
+		strncat(fixed_path, remaining_path, path_until - remaining_path);
+	}
+	if(dst != remaining_path){
+		strncpy(dst, fixed_path, sizeof(fixed_path));
+	}
+	return dst;
+}
+
+
 void extrair_requisicao(unsigned char* msg, char* method, char* path, char* absolute_path){
 	sscanf(msg, "%5s %80s ", method, path);
+	filtrar_str(path, "/..");
+	path[0] = '/';
 	sprintf(absolute_path, "src%s", path);
 	if(absolute_path[strlen(absolute_path) -1] == '/'){
 		strcat(absolute_path, "index.html");
