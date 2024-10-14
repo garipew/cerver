@@ -131,24 +131,32 @@ char* encontrar_data(){
 }
 
 
-int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path, size_t absolute_l){
-	int fsize;
-	FILE* fp;
+int escrever_head(FILE* fp, unsigned char* msg, size_t msg_l, char* absolute_path){
 	char type[100];
-	unsigned char* answ;
-	size_t answ_l;
 	extrair_tipo(absolute_path, type, sizeof(type));
-	fp = fopen(absolute_path, "r");
+	int fsize = 0;
 	if(!fp){
 		memset(msg, 0, msg_l);
 		sprintf(msg, "HTTP/1.1 404 Not Found\r\nDate: %s\r\n\r\n", encontrar_data());
-		send(cfd, msg, msg_l, 0);
 	} else{
 		fseek(fp, 0L, SEEK_END);
 		fsize = ftell(fp);
 		rewind(fp);
 		memset(msg, 0, msg_l);
 		sprintf(msg, "HTTP/1.1 200 OK\r\nDate: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n", encontrar_data(), fsize, type);
+	}
+	return fsize;
+}
+
+
+int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
+	unsigned char* answ;
+	size_t answ_l;
+	FILE* fp = fopen(absolute_path, "r");
+	int fsize = escrever_head(fp, msg, msg_l, absolute_path);
+	if(!fp){
+		send(cfd, msg, msg_l, 0);
+	} else{
 		answ_l = strlen(msg) + fsize + 3;
 		answ = malloc(answ_l);
 		if(!answ){
@@ -161,10 +169,18 @@ int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path, s
 		}	
 		send(cfd, answ, answ_l, 0);
 		fclose(fp);
-		if(answ){
-			free(answ);
-			answ = NULL;
-		}
+		free(answ);
+	}
+	return 0;
+}
+
+
+int head_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
+	FILE *fp = fopen(absolute_path, "r");
+	escrever_head(fp, msg, msg_l, absolute_path);
+	send(cfd, msg, msg_l, 0);
+	if(fp){
+		fclose(fp);
 	}
 	return 0;
 }
@@ -201,8 +217,16 @@ void extrair_requisicao(unsigned char* msg, char* method, char* path, char* abso
 }
 
 
-void enviar_resposta(int cfd, unsigned char* msg, size_t msg_l, char* method, char* absolute_path, size_t absolute_l){
+void enviar_resposta(int cfd, unsigned char* msg, size_t msg_l, char* method, char* absolute_path){
 	if(!strcmp(method, "GET")){
-		get_method(cfd, msg, msg_l, absolute_path, absolute_l);
+		get_method(cfd, msg, msg_l, absolute_path);
+		return;
+	}
+	if(!strcmp(method, "HEAD")){
+		head_method(cfd, msg, msg_l, absolute_path);
+		return;
+	}
+	if(!strcmp(method, "POST")){
+	
 	}
 }

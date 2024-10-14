@@ -45,7 +45,7 @@ int main(int argc, char* argv[]){
 		}
 
 		extrair_requisicao(msg, method, path, absolute_path);
-		enviar_resposta(cfd, msg, sizeof(msg), method, absolute_path, sizeof(absolute_path));
+		enviar_resposta(cfd, msg, sizeof(msg), method, absolute_path);
 		printf("%s %s\n", method, path);
 		close(cfd);
 		cfd = -1;
