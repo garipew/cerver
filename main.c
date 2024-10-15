@@ -24,8 +24,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	unsigned char msg[1000];
-	char path[70];
-	char absolute_path[75];
+	char absolute_path[100];
 	char method[5];
 	char *connection;
 	int cfd = -1;
@@ -34,7 +33,6 @@ int main(int argc, char* argv[]){
 	while(keepalive){
 		cfd = cfd == -1 ? aceitar_conexao(sfd) : cfd;
 		memset(msg, 0, sizeof(msg));
-		memset(path, 0, sizeof(path));
 		memset(method, 0, sizeof(method));
 		memset(absolute_path, 0, sizeof(absolute_path));
 
@@ -44,7 +42,7 @@ int main(int argc, char* argv[]){
 			continue;
 		}
 
-		extrair_requisicao(msg, method, path, absolute_path);
+		extrair_requisicao(msg, method, absolute_path);
 		enviar_resposta(cfd, msg, sizeof(msg), method, absolute_path);
 		printf("%s %s\n", method, path);
 		close(cfd);

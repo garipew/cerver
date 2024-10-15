@@ -9,6 +9,10 @@
 #include <time.h>
 
 
+/* criar_conexao()
+ * Abre a port 80 para possíveis conexões.
+ * Retorna o fd em caso de sucesso e -1 em caso de fracasso.
+ */
 int criar_conexao(){
 	int sfd;
 	struct addrinfo hint, *p, *servinfo;
@@ -46,6 +50,11 @@ int criar_conexao(){
 }
 
 
+/* iniciar_servidor(int)
+ * Começa a escutar requisições de conexões no fd passado como argumento.
+ * Retorna 0 em caso de sucesso e 1 em caso de fracasso.
+ * sfd -> fd do servidor.
+ */
 int iniciar_servidor(int sfd){
 	if(listen(sfd, 10) == -1){
 		printf("listen\n");
@@ -55,6 +64,10 @@ int iniciar_servidor(int sfd){
 }
 
 
+/* criar_servidor()
+ * Abre a port 80 e começa a escutar possíveis conexões.
+ * Retorna o fd do servidor em caso de sucesso e -1 em caso de fracasso.
+ */
 int criar_servidor(){
 	int sfd = criar_conexao();
 	if(sfd == -1){
@@ -69,6 +82,11 @@ int criar_servidor(){
 }
 
 
+/* aceitar_conexao(int)
+ * Aceita a primeira conexão possível no fd passado como argumento.
+ * Retorna o fd da conexão.
+ * sfd -> fd do servidor.
+ */
 int aceitar_conexao(int sfd){
 	struct sockaddr_storage client_addr;
 	socklen_t sin_size;
@@ -81,6 +99,12 @@ int aceitar_conexao(int sfd){
 }
 
 
+/* unsigned char* uncat(unsigned char*, unsigned char*)
+ * strcat para unsigned char*.
+ * cats the content of src to the end of dst.
+ * dst -> primeira string.
+ * src -> segunda string.
+ */
 unsigned char* uncat(unsigned char* dst, unsigned char* src){
 	unsigned char *p;
 	p = memcpy(dst+strlen(dst), src, strlen(src));	
@@ -89,6 +113,13 @@ unsigned char* uncat(unsigned char* dst, unsigned char* src){
 }
 
 
+/* void extrair_tipo(char*, char*, size_t)
+ * Extrai o tipo de arquivo requisitado por GET ou HEAD
+ * Armazena o MIME equivalente no segundo argumento.
+ * absolute_path -> caminho descrito na requisição.
+ * type -> endereço em que será armazenado o tipo equivalente.
+ * type_l -> tamanho de type.
+ */
 void extrair_tipo(char* absolute_path, char* type, size_t type_l){
 	char *suffix;
 	suffix = strchr(absolute_path, '.');
@@ -122,6 +153,9 @@ void extrair_tipo(char* absolute_path, char* type, size_t type_l){
 }
 
 
+/* char* encontrar_data()
+ * Retorna uma string contendo a data.
+ */
 char* encontrar_data(){
 	time_t t = time(NULL);
 	struct tm *tm = localtime(&t);
@@ -131,6 +165,13 @@ char* encontrar_data(){
 }
 
 
+/* int escrever_head(FILE*, unsigned char*, size_t, char*)
+ * Escreve a header da resposta para GET ou HEAD.
+ * fp -> fp do arquivo descrito na requisição. NULL caso arquivo não exista.
+ * msg -> armazena todo o conteúdo da requisição.
+ * msg_l -> tamanho de msg.
+ * absolute_path -> caminho descrito na requisição.
+ */
 int escrever_head(FILE* fp, unsigned char* msg, size_t msg_l, char* absolute_path){
 	char type[100];
 	extrair_tipo(absolute_path, type, sizeof(type));
@@ -149,6 +190,14 @@ int escrever_head(FILE* fp, unsigned char* msg, size_t msg_l, char* absolute_pat
 }
 
 
+/*int get_method(int, unsigned char*, size_t, char*)
+ * Processa requisições GET e envia resposta.
+ * Retorna 0 em sucesso e 1 em fracasso.
+ * cfd -> fd da requisição.
+ * msg -> armazena todo o conteúdo da requisição.
+ * msg_l -> tamanho de msg.
+ * absolute_path -> caminho descrito na requisição.
+ */
 int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
 	unsigned char* answ;
 	size_t answ_l;
@@ -175,6 +224,14 @@ int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
 }
 
 
+/* int head_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path)
+ * Processa requisição HEAD e envia resposta.
+ * Retorna 0 em sucesso.
+ * cfd -> fd da requisição.
+ * msg -> armazena todo o conteúdo da requisição.
+ * msg_l -> tamanho de msg.
+ * absolute_path -> caminho descrito na requisição.
+ */
 int head_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
 	FILE *fp = fopen(absolute_path, "r");
 	escrever_head(fp, msg, msg_l, absolute_path);
@@ -186,27 +243,40 @@ int head_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
 }
 
 
-char* filtrar_str(char* dst, char* src){
-	char *path_until, *remaining_path = dst;
+/* char* filtrar_str(char* filtered, char* filter)
+ * Filtra todas as ocorrencias de filter em filtered.
+ * Retorna filtered.
+ * filtered -> string original.
+ * filter -> filtro a ser removido.
+ */
+char* filtrar_str(char* filtered, char* filter){
+	char *path_until, *remaining_path = filtered;
 	char fixed_path[80] = { 0 };
-	path_until = strstr(remaining_path, src);
+	path_until = strstr(remaining_path, filter);
 	while(path_until){
-		remaining_path = path_until + strlen(src);
-		path_until = strstr(remaining_path, src);
+		remaining_path = path_until + strlen(filter);
+		path_until = strstr(remaining_path, filter);
 		if(!path_until){
 			strncat(fixed_path, remaining_path, strlen(remaining_path));
 			break;
 		}
 		strncat(fixed_path, remaining_path, path_until - remaining_path);
 	}
-	if(dst != remaining_path){
-		strncpy(dst, fixed_path, sizeof(fixed_path));
+	if(filtered != remaining_path){
+		strncpy(filtered, fixed_path, sizeof(fixed_path));
 	}
-	return dst;
+	return filtered;
 }
 
 
-void extrair_requisicao(unsigned char* msg, char* method, char* path, char* absolute_path){
+/* void extrair_requisicao(unsigned char* msg, char* method, char* path, char* absolute_path)
+ * Extrai o método e o caminho de uma requisição feita.
+ * msg -> armazena todo o conteúdo da requisição.
+ * method -> endereço onde será armazenado o método extraido.
+ * absolute_path -> endereço onde será armazenado o caminho extraido.
+ */
+void extrair_requisicao(unsigned char* msg, char* method, char* absolute_path){
+	char path[80] = { 0 };
 	sscanf(msg, "%5s %80s ", method, path);
 	filtrar_str(path, "/..");
 	path[0] = '/';
@@ -217,6 +287,14 @@ void extrair_requisicao(unsigned char* msg, char* method, char* path, char* abso
 }
 
 
+/* void enviar_resposta(int cfd, unsigned char* msg, size_t msg_l, char* method, char* absolute_path){
+ * Envia uma resposta apropriada para a requisição em method.
+ * cfd -> fd da requisição.
+ * msg -> armazena todo o conteúdo da requisição.
+ * msg_l -> tamanho de msg.
+ * method -> método da requisição.
+ * absolute_path -> caminho descrito na requisição.
+ */
 void enviar_resposta(int cfd, unsigned char* msg, size_t msg_l, char* method, char* absolute_path){
 	if(!strcmp(method, "GET")){
 		get_method(cfd, msg, msg_l, absolute_path);
