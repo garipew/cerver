@@ -178,13 +178,13 @@ int escrever_head(FILE* fp, unsigned char* msg, size_t msg_l, char* absolute_pat
 	int fsize = 0;
 	if(!fp){
 		memset(msg, 0, msg_l);
-		sprintf(msg, "HTTP/1.1 404 Not Found\r\nDate: %s\r\n\r\n", encontrar_data());
+		sprintf(msg, "HTTP/1.0 404 Not Found\r\nDate: %s\r\n\r\n", encontrar_data());
 	} else{
 		fseek(fp, 0L, SEEK_END);
 		fsize = ftell(fp);
 		rewind(fp);
 		memset(msg, 0, msg_l);
-		sprintf(msg, "HTTP/1.1 200 OK\r\nDate: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n", encontrar_data(), fsize, type);
+		sprintf(msg, "HTTP/1.0 200 OK\r\nDate: %s\r\nContent-Length: %d\r\nContent-Type: %s\r\n\r\n", encontrar_data(), fsize, type);
 	}
 	return fsize;
 }
@@ -280,7 +280,7 @@ void extrair_requisicao(unsigned char* msg, char* method, char* absolute_path){
 	sscanf(msg, "%5s %80s ", method, path);
 	filtrar_str(path, "/..");
 	path[0] = '/';
-	sprintf(absolute_path, "src%s", path);
+	sprintf(absolute_path, "root%s", path);
 	if(absolute_path[strlen(absolute_path) -1] == '/'){
 		strcat(absolute_path, "index.html");
 	}
