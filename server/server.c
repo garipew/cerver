@@ -180,6 +180,9 @@ void extrair_requisicao(unsigned char* msg, char* method, char* absolute_path){
 	if(absolute_path[strlen(absolute_path) -1] == '/'){
 		strcat(absolute_path, "index.html");
 	}
+	if(!strchr(absolute_path, '.')){
+		strcat(absolute_path, ".html");
+	}
 }
 
 
