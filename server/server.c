@@ -9,110 +9,6 @@
 #include <time.h>
 
 
-/* criar_conexao()
- * Abre a port 80 para possíveis conexões.
- * Retorna o fd em caso de sucesso e -1 em caso de fracasso.
- */
-int criar_conexao(){
-	int sfd;
-	struct addrinfo hint, *p, *servinfo;
-
-	memset(&hint, 0, sizeof(hint));
-	hint.ai_family = AF_INET;
-	hint.ai_socktype = SOCK_STREAM;
-	hint.ai_flags = AI_PASSIVE;
-
-	if(getaddrinfo(NULL, "80", &hint, &servinfo) != 0){
-		printf("addrinfo\n");
-		return -1;
-	}
-
-	for(p = servinfo; p != NULL; p = p->ai_next){
-		sfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-		if(sfd == -1){
-			continue;
-		}
-
-		if(bind(sfd, p->ai_addr, p->ai_addrlen) == -1){
-			close(sfd);
-			continue;
-		}
-		break;
-	}
-		
-	if(p == NULL){
-		freeaddrinfo(servinfo);
-		printf("bind\n");
-		return -1;
-	}
-	freeaddrinfo(servinfo);
-	return sfd;
-}
-
-
-/* iniciar_servidor(int)
- * Começa a escutar requisições de conexões no fd passado como argumento.
- * Retorna 0 em caso de sucesso e 1 em caso de fracasso.
- * sfd -> fd do servidor.
- */
-int iniciar_servidor(int sfd){
-	if(listen(sfd, 10) == -1){
-		printf("listen\n");
-		return 1;
-	}
-	return 0;
-}
-
-
-/* criar_servidor()
- * Abre a port 80 e começa a escutar possíveis conexões.
- * Retorna o fd do servidor em caso de sucesso e -1 em caso de fracasso.
- */
-int criar_servidor(){
-	int sfd = criar_conexao();
-	if(sfd == -1){
-		return sfd;
-	}
-	int listen = iniciar_servidor(sfd);
-	if(listen){
-		close(sfd);
-		return -1;
-	}
-	return sfd;
-}
-
-
-/* aceitar_conexao(int)
- * Aceita a primeira conexão possível no fd passado como argumento.
- * Retorna o fd da conexão.
- * sfd -> fd do servidor.
- */
-int aceitar_conexao(int sfd){
-	struct sockaddr_storage client_addr;
-	socklen_t sin_size;
-	char s[INET6_ADDRSTRLEN];
-	int cfd;
-	sin_size = sizeof(cfd);
-	cfd = accept(sfd, (struct sockaddr*)&client_addr, &sin_size);
-	inet_ntop(client_addr.ss_family, &(((struct sockaddr_in*)&client_addr)->sin_addr), s, sizeof(s));
-	return cfd;
-}
-
-
-/* unsigned char* uncat(unsigned char*, unsigned char*)
- * strcat para unsigned char*.
- * cats the content of src to the end of dst.
- * dst -> primeira string.
- * src -> segunda string.
- */
-unsigned char* uncat(unsigned char* dst, unsigned char* src){
-	unsigned char *p;
-	p = memcpy(dst+strlen(dst), src, strlen(src));	
-	p = '\0';
-	return dst;
-}
-
-
 /* void extrair_tipo(char*, char*, size_t)
  * Extrai o tipo de arquivo requisitado por GET ou HEAD
  * Armazena o MIME equivalente no segundo argumento.
@@ -213,7 +109,7 @@ int get_method(int cfd, unsigned char* msg, size_t msg_l, char* absolute_path){
 			return 1;
 		}
 		memset(answ, 0, answ_l);
-		uncat(answ, msg);	
+		strcat(answ, msg);	
 		while(fread(answ+strlen(answ), sizeof(unsigned char), answ_l-strlen(answ), fp)){
 		}	
 		send(cfd, answ, answ_l, 0);

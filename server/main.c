@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include "server.h"
+#include "../conexao.h"
 
 
 static int keepalive;
@@ -18,7 +19,7 @@ void sigint_handler(int signum){
 int main(int argc, char* argv[]){
 	signal(SIGINT, sigint_handler);
 
-	int sfd = criar_servidor();
+	int sfd = encontrar_conexao(NULL, "80");
 	if(sfd == -1){
 		return 1;
 	}
